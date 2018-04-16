@@ -1,5 +1,5 @@
 # CMSE491 - Computational Biology and Bioinformatics - Semester Project
-===
+
 ## Application of Machine Learning Techniques to Microbiome Data.
 
 #### Authors:  

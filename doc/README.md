@@ -1,5 +1,5 @@
 # Documentation
-===
+
 
 Final report and necessary documentation for the code used in our semester project. Final report is in the format of a Jupyter Notebook with inline analysis on the dataset and markdown cells for the body of the report.
 
