@@ -10,7 +10,7 @@
 
 #### Summary of Repository and Directory Structure:  
  
-* `doc` - Holds final project report in the form of a Jupyter Notebook with the analysis pipeline inlined and the writeup in markdown cells. Report will also be in the form of PDF and HTML.
+* `doc` - Holds final project report in the form of a Jupyter Notebook with the analysis pipeline inlined and the writeup in markdown cells.
 
 * `src` - Location of all of our source code used in our analysis. If the dataset were accessible, then one would have to run `sh runlog.sh` and the analysis pipeline would be run and all appropriate results directed to the proper output directories.
 
