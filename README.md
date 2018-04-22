@@ -27,7 +27,7 @@ The dataset is under IRB-protection and is currently under control by Dr. Shanno
 
 #### Author Contributions:   
 
-+ Nathaniel Hawkins: Writing the code and developing computational methods. Writing up descriptions of methods used in the project. 
++ Nathaniel Hawkins: Writing the code and developing computational methods. Writing up descriptions of methods used in the project. Managing git repository and organizing files for submission.
 
 + Brian Nohomovich: Developing the computational methods and writing code. Working with the dataset and ensuring that was useable in the pipeline (data wrangling). Writing of biological background and context to the study.
 
