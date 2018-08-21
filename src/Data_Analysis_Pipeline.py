@@ -69,13 +69,13 @@ def plot_confusion_matrix(cm, classes,
 
 
 ##########################################################
-##Loading, Concaetnating, and Cleaning the Data for Analysis
+##Loading, Concatenating, and Cleaning the Data for Analysis
 ##########################################################
 
 ##Load in data
 print("\n\nLoading in the Data")
 # data_df = pd.read_csv("full_data.csv")
-data_df = pd.read_csv("../full_data.csv") ##Local Development Copy
+data_df = pd.read_csv("../data.csv") ##Local Development Copy
 
 ##Extract Class Predictions and make them discrete integers
 print("Transforming classes into integers for the model")
@@ -111,13 +111,26 @@ micro_bio_data[np.isnan(micro_bio_data)] = -1
 micro_bio_data[np.isinf(micro_bio_data)] = -1
 micro_bio_data = zscore(micro_bio_data, axis = 1)
 micro_bio_data[np.isnan(micro_bio_data)] = -1
-clincal_data = data_df[clinical_columns].values.astype(float)
+
+try:
+    clinical_data = data_df[clinical_columns].values.astype(float)
+except:
+    clinical_data = data_df[clinical_columns].values.astype(str)
+    def subset(item):
+        return item.split(" ")[0].lower()
+    subset_array = np.vectorize(subset)
+    clinical_data = subset_array(clinical_data)
+    clinical_data[clinical_data == 'nan'] = "-1"
+    clinical_data[clinical_data == 'missing'] = "-1"
+    clinical_data[clinical_data == 'yes'] = "1"
+    clinical_data[clinical_data == 'no'] = "0"
+    clinical_data = clinical_data.astype(float)
 
 ##Total Features
 features = np.array(list(clinical_columns)+list(micro_bio_colums))
 
 ##Final Model Data
-X = np.concatenate((clincal_data,micro_bio_data), axis = 1)
+X = np.concatenate((clinical_data,micro_bio_data), axis = 1)
 y = y_true
 
 print_message("Data Loaded and Ready!!")
