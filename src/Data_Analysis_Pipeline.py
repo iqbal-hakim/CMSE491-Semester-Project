@@ -1,5 +1,19 @@
+'''
+Program Purpose and Workflow:
++ FIXME
+'''
+
+##########################################################
+## Print Message Function
+##########################################################
+def print_message(string):
+    print('#'*(len(string) + 2))
+    print('#'+string+'#')
+    print('#'*(len(string) + 2))
+
 ##Imports
-print("Importing necessary libraries")
+print_message("Importing Necessary Libraries")
+print("Importing Non-Sklearn Libraries")
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -9,6 +23,7 @@ import itertools
 
 
 ##Sklearn Imports
+print("Importing Sklearn Libraries")
 from sklearn.ensemble import RandomForestClassifier as RFC
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -20,14 +35,11 @@ from sklearn import svm
 from sklearn.model_selection import train_test_split as TTS
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import classification_report, confusion_matrix
+print_message("Imports Complete!")
 
 ##########################################################
-##Print Message Function and Plot Confusion Matrix
+##Plot Confusion Matrix Function
 ##########################################################
-def print_message(string):
-    print('#'*(len(string) + 2))
-    print('#'+string+'#')
-    print('#'*(len(string) + 2))
 
 ##From sklearn
 ##http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
@@ -39,6 +51,9 @@ def plot_confusion_matrix(cm, classes,
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
+    ##Function has option to show a normalized confusion matrix,
+    ##which will show the relative percentages, rather than raw counts,
+    ##of model predictions in each outcome class
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
@@ -46,6 +61,7 @@ def plot_confusion_matrix(cm, classes,
         print('Confusion matrix, without normalization')
 
     print(cm)
+    ##Make figure for creating confusion matrix
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
@@ -54,6 +70,7 @@ def plot_confusion_matrix(cm, classes,
     plt.xticks(tick_marks, classes, rotation=45)
     plt.yticks(tick_marks, classes)
 
+    ##Labeling the confusion matrix
     fmt = '.2f' if normalize else 'd'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
@@ -68,27 +85,36 @@ def plot_confusion_matrix(cm, classes,
 ##########################################################
 
 
+
 ##########################################################
 ##Loading, Concatenating, and Cleaning the Data for Analysis
 ##########################################################
 
 ##Load in data
-print("\n\nLoading in the Data")
-# data_df = pd.read_csv("full_data.csv")
+print("\n\n")
+print_message("Loading in the Dataset")
+##Change the pathname and name of the datafile being used for analysis
 data_df = pd.read_csv("../data.csv") ##Local Development Copy
 
 ##Extract Class Predictions and make them discrete integers
-print("Transforming classes into integers for the model")
+print("Transforming Classes Into Integers for the Model")
+##Get health labels from the dataset, array of patients' health labels
 labels = data_df['Health'].values
+##Get unique
 unique_labs = np.unique(labels)
 y_true = []
+##Assign value to patient's health label based on what its corresponding index
+##is in the unique array
 for i in labels:
     y_true.append([j for j in range(len(unique_labs)) if unique_labs[j] == i][0])
 
 ##Extract the indices for the tags for the bacterial/viral data
-print("Getting the bacterial/viral counts from the data and clinical symptoms\n")
+print("Getting the bacterial/viral counts from the data and clinical symptoms")
+##Change these to correspond to the first and last column of the dataset that
+##will be extracted for doing the microbio analysis
 first_tag = 'Bacteroidetes'
 last_tag = 'Virus'
+##Change the corresponding column name into an index
 first_loc = [x for x in range(len(data_df.columns)) if data_df.columns[x] == first_tag][0]
 last_loc = [x+1 for x in range(len(data_df.columns)) if data_df.columns[x] == last_tag][0]
 
@@ -97,36 +123,66 @@ print("Getting feature names from data")
 micro_bio_colums = data_df.columns[first_loc:last_loc]
 
 ##Getting the clinical columns
+##Change these to correspond to the first and last column of the dataset that
+##will be extracted for doing the clinical symptoms analysis
 first_tag = 'No Symptoms'
 last_tag = 'Fever'
+##Change the column name into an index and extract feature names
 first_loc = [x for x in range(len(data_df.columns)) if data_df.columns[x] == first_tag][0]
 last_loc = [x+1 for x in range(len(data_df.columns)) if data_df.columns[x] == last_tag][0]
 clinical_columns = data_df.columns[first_loc:last_loc]
 
-##Extract the matrix of expression data and normalize
+print_message("Data Selected ")
+##Extract the matrix of microbio expression data and normalize
 ##Log2 transform and the z-score normalization
 micro_bio_data = data_df[micro_bio_colums].values.astype(float)
 micro_bio_data = np.log2(micro_bio_data)
+##May get runtime warning for divide by zero in log2, this is something that
+##can be ignored. First, log2 transform the data
+##All of the "NaN" and "inf" values are turned into a -1, which will be the
+##default null value
 micro_bio_data[np.isnan(micro_bio_data)] = -1
 micro_bio_data[np.isinf(micro_bio_data)] = -1
+##Once all of the values are log2 transformed and corrected, then do a zscore
+##transformation, subtract the mean and divide by the standard deviation,
+##Along each of the columns, or each of the features across all patients,
+##so values in features will be relative to that feature in every other patient
 micro_bio_data = zscore(micro_bio_data, axis = 1)
 micro_bio_data[np.isnan(micro_bio_data)] = -1
 
+##Handling the string values for the clinical symptoms
 try:
+    ##If the values are already in a format that can be converted to a float
     clinical_data = data_df[clinical_columns].values.astype(float)
 except:
+    ##Otherwise, take in the values as a string
     clinical_data = data_df[clinical_columns].values.astype(str)
+
+    ##Function to select a small subset of the values in each of the symptoms,
+    ##which is just indexing the strings
     def subset(item):
         return item.split(" ")[0].lower()
+
+    ##Vectorize the function to apply to array of values
     subset_array = np.vectorize(subset)
+
+    ##Now, subset each string in the array
     clinical_data = subset_array(clinical_data)
+
+    ##Turn "nan" and "missing" datapoints into -1
     clinical_data[clinical_data == 'nan'] = "-1"
     clinical_data[clinical_data == 'missing'] = "-1"
+
+    ##Yes is the positive symptom indicator and is marked by a 1
     clinical_data[clinical_data == 'yes'] = "1"
+
+    ##No is the negative symptom marker and is noted with a 0
     clinical_data[clinical_data == 'no'] = "0"
+
+    ##Convert clinical data to floats now
     clinical_data = clinical_data.astype(float)
 
-##Total Features
+##Total Features collected
 features = np.array(list(clinical_columns)+list(micro_bio_colums))
 
 ##Final Model Data
