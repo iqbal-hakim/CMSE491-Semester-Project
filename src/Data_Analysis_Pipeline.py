@@ -199,53 +199,71 @@ print('\n')
 ##Random Forest Classifier
 ##########################################################
 
-##Make dictionary to store model importances
 print_message("Working on RFC")
 
+##Make dictionary to store model importances
 model_importances = {}
+##Take combined list of features for clinical features and microbio features
 for feature in list(clinical_columns)+list(micro_bio_colums):
+    ##Set each feature's importance to 0
     model_importances[feature] = 0
 
-##Store AUC for CV
+##Store AUC for cross validations
 auc_validations = {}
+##For each unique class in the dataset
 for k in np.unique(y_true):
+    ##Create an empty list to store the AUC for each iteration in cross-validation
     auc_validations[k] = []
 
-##K-fold Cross Validation
+##K-fold Cross Validation, 20 iterations
 for T in range(20):
-    ##Train-Test Split
+    ##Train-Test Split the aggregate data with Test Size of 25%
     X_train, X_test, y_train, y_test = TTS(X, y, test_size = 0.25)
 
-    ##Train the Model
-    # print("Building RFC model\n")
+    ##Train the Model, n_estimators set to 30, 5 jobs run
     rfc = RFC(n_estimators=30, n_jobs = 5)
+    ##Fir the model
     rfc.fit(X_train, y_train)
+    ##Get continuous probabiltiy prediction and boolean prediction
     y_pred = rfc.predict_proba(X_test)
     y_pred_b = rfc.predict(X_test)
 
     ##Create encoding for AUC
     y_test_e = label_binarize(y_test, classes = np.unique(y_test))
 
-    # Compute ROC Curve and AUC for each class
+    ##Compute ROC Curve and AUC for each class
+    ##False positive rate dictionary
     fpr = dict()
+    ##True positive rate dictionary
     tpr = dict()
     roc_auc = dict()
     for i in range(y_test_e.shape[1]):
+        ##Calculate ROC and AUC
         fpr[i], tpr[i], _ = roc_curve(y_test_e[:, i], y_pred[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
+    ##Store the AUC for each class in the dictionary defined before
     for k in roc_auc.keys():
         auc_validations[k].append(roc_auc[k])
 
 
-    ##Extract Feature Importances
+    ##Extract Feature Importances from RF model
     importances = rfc.feature_importances_
+    ##Sort the features from most important to least important using argsort
     sorted_inds = np.argsort(importances)[::-1]
+    ##Sort the features
     sorted_features = features[sorted_inds]
     sorted_importances = importances[sorted_inds]
 
+    ##For each of the features
     for i,val in enumerate(sorted_features):
+        ##Update the total feature importance in the dictionary
+        ##for feature importances
         model_importances[val] += sorted_importances[i]
 
+    ##On the final run, print out a single confusion Matrix
+    ##to verify the model's performance, save the figure to the Results
+    ##directory, print a classification report. Meant as a final check of
+    ##behavior, not as a definitive result
     if T==19:
         rfc = plot_confusion_matrix(confusion_matrix(y_test, y_pred_b), classes = ["Sick", "Healthy", "Follow"], fname = "../results/random_forest.png")
         print(confusion_matrix(y_test, y_pred_b))
@@ -254,11 +272,16 @@ for T in range(20):
 
 ##Print Results for Random Forest
 print_message("Random Forest Classifier")
+##Print out the AUC for each fo the class after K fold generation
 print('\n'+"After {} Trials:".format(T+1))
 for k in auc_validations.keys():
     print("AUC {}: {}".format(unique_labs[k], round(np.mean(auc_validations[k]),4)))
 
 ##Final Feature Importances Plot
+##This is the main motivation of using the Random Forest model. We wanted to see
+##if there was some kind of match between the feature importances of the model
+##and what we see in the literature, plot the final aggregate feature importances
+##and send the plot out to the results directory
 importances = np.array(list(model_importances.values()))
 sorted_inds = np.argsort(importances)[::-1]
 sorted_importances = importances[sorted_inds]/len(importances)
@@ -275,12 +298,16 @@ ax.set_xticklabels(sorted_features, rotation = 90)
 plt.tight_layout()
 plt.savefig("../results/full_w_clinical_importances.png", dpi = 200, bbox_inches = 'tight')
 
+##Save final array of feature importances. The order is in the same order as
+##the column list when creating it, clinical features and then microbio features
 to_save = np.array(importances)
 np.savetxt("../results/importances_in_order_of_features.txt", to_save)
 
 ##########################################################
 
 print('\n')
+
+##Conduct the same thing with Linear SVM and Logistic Regression
 
 ##########################################################
 ##Linear SVM
@@ -299,9 +326,14 @@ for T in range(20):
     X_train, X_test, y_train, y_test = TTS(X, y, test_size = 0.25)
 
     ##Train the Model
+    ##Using the OneVsRestClassifier with a Linear Support Vector Machine
+    ##the kernel is set to linear. Use the default parameters the exception
+    ##of the kernel and setting probabilities to true, this return probabilities
+    ##for each class
     classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))
     classifier.fit(X_train, y_train)
 
+    ##Prediction in a continuous form and boolean form
     y_pred = classifier.predict_proba(X_test)
     y_pred_b = classifier.predict(X_test)
 
@@ -318,18 +350,23 @@ for T in range(20):
     for k in roc_auc.keys():
         auc_validations[k].append(roc_auc[k])
 
+    ##On the final iteration, plot a confusion matrix and return a classification
+    ##report to verify the model's behavior, save the matrix to the Results
+    ##directory
     if T==19:
         lin_reg = plot_confusion_matrix(confusion_matrix(y_test, y_pred_b), classes = ["Sick", "Healthy", "Follow"], fname = "../results/lin_svm.png")
         print(confusion_matrix(y_test, y_pred_b))
         print(classification_report(y_test, y_pred_b))
 
-##Print Results
+##Print Results for the AUC
 print_message("Linear SVM")
 print('\n'+"After {} Trials:".format(T+1))
 for k in auc_validations.keys():
     print("AUC {}: {}".format(unique_labs[k], round(np.mean(auc_validations[k]),4)))
 
 ##########################################################
+
+##Perform the same pipeline with the Logistic Regression
 
 print('\n')
 
@@ -384,27 +421,39 @@ for k in auc_validations.keys():
 
 
 ##########################################################
-##Comaprison to Methods
+##Comaprison to Methods KMeans and the different models
 ##########################################################
-##K to try
+##K values to try in kmeans clustering
+##The motivation for this is that we are hoping to be able to find some kind of
+##agreement between the number of clusters used for clustering and the number
+##of classes in the dataset, as well as seeing where in the dataset kmeans
+##agrees with the different models
 ks = [2,3,4,5,6,7,8,9,10]
 
-##Run pca take first 5 principle components
+##Run pca take first 5 principle components of the dataset to reduce the number
+##of features in the dataset
 X = PCA(n_components = 5).fit_transform(X)
 
+##For each K in the K Means trials
 for K in ks:
 
-    ##Store Adjusted Rand Indices
-    rand_indexes = {"Log,RFC":0, "Log,KMeans":0, "Log,Lin":0, "RFC,KMeans":0, "RFC,Lin":0, "KMeans,Lin":0}
+    ##Store Adjusted Rand Indices for the different comparisons, it will compare
+    ##the two outputs for the different models and assign a value for comparison
+    rand_indexes = {"Log,RFC":0, "Log,Lin":0, "RFC,Lin":0, "RFC,KMeans":0, "Log,KMeans":0, "KMeans,Lin":0}
 
     print_message("Comparison Results for K={}".format(K))
 
-    ##Cross Validation by Repeat Trials
+    ##Cross Validation by Repeat Trials, K-fold cross validation, 20 times
     cnt = 1
     for T in range(20):
 
         ##Train-Test Split
         X_train, X_test, y_train, y_test = TTS(X, y, test_size = 0.25)
+
+        ##Run each of the models, since nothing here is changing,
+        ##then each run of the K Means with varying k values is another version
+        ##of cross-validation for RFC, Linear SVM, and Logistic Regression. Each
+        ##run will be a consistency check for behavior
 
         ##Logistic Regression
         lr_classifier = LogisticRegression()
@@ -425,6 +474,8 @@ for K in ks:
         classifier = OneVsRestClassifier(svm.SVC(kernel='linear', probability=True))
         y_pred_lin = classifier.fit(X_train, y_train).predict(X_test)
 
+        ##Add to each of the dictionary keys. Adding the Adjusted rand index for
+        ##each of the trials to get an aggregate adjusted rand index
         rand_indexes["Log,RFC"] += adjusted_rand_score(y_pred_log, y_pred_rf)
         rand_indexes["Log,KMeans"] += adjusted_rand_score(y_pred_log, y_pred_km)
         rand_indexes["Log,Lin"] += adjusted_rand_score(y_pred_log, y_pred_lin)
@@ -434,9 +485,10 @@ for K in ks:
         cnt += 1
 
     ##Print Result
+    ##After the 20 trials, then print out the average adjusted rand indices for
+    ##each of the comparison methods
     print("Result for K = {}".format(K))
     for key in rand_indexes.keys():
         print("{}: {}".format(key, round(rand_indexes[key]/cnt, 4)))
     print("\n")
-
 ##########################################################
