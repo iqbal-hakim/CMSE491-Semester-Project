@@ -143,7 +143,8 @@ def plot_confusion_matrix(cm, classes,
 print("\n\n")
 print_message("Loading in the Dataset")
 ##Change the pathname and name of the datafile being used for analysis
-data_df = pd.read_csv("../data.csv") ##Local Development Copy
+# data_df = pd.read_csv("../data.csv") ##Local Development Copy
+data_df = pd.read_csv("data.csv") ##Local Development Copy
 
 ##Extract Class Predictions and make them discrete integers
 print("Transforming Classes Into Integers for the Model")
