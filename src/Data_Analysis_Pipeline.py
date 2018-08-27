@@ -110,8 +110,6 @@ def plot_confusion_matrix(cm, classes,
         print("Normalized confusion matrix")
     else:
         print('Confusion matrix, without normalization')
-
-    print(cm)
     ##Make figure for creating confusion matrix
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
