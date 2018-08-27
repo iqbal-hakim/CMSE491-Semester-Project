@@ -1,7 +1,59 @@
 '''
 Program Purpose and Workflow:
-+ FIXME
+The purpose of this program is to serve as a proof of concept
+that machine learning algorithms can be applied to data
+of this nature. We are trying to show that microbio and clinical data
+can be combine together and used to make predicitons of a person's
+health status.
+
+The pipeline of the program is as follows:
++ Necessary libraries are imorted into the working environment of
+the code. First, standard python libraries such as numpy and pandas,
+then sklearn libraries.
+
++ Define some necessary functions for future use, mainly the confusion matrix
+plotting needed at the verification step.
+
++ Section the data based on the column headers for the clinical and
+microbio data.
+
++ Perform normalization and cleaning actions on the data
+    * The microbio data gets log2 transformed and then zscore normalized
+    with nan's and inf's turned to -1's.
+    * The clinical features are loaded in and tried to be converted to float
+        > If that is not possible, then the string values are attempted to be
+        converted to 1's (Yes for symptoms), 0's (No for symptoms), and -1's
+        for all other values in the clinical variables.
+
++ Run K-Fold cross validation of the following models:
+    * Random Forest Classifier (30 trees, 5 forests)
+    * OneVsRestClassifier with Linear SVM (default values aside from kernel and
+    probability return values)
+    * Logistic Regression (default values)
+    For each of the models, run k-fold cross validation, calculate the ROC and AUC
+    and store for each trial. On the last trial, print the classification report
+    and the confusion matrix to verify the behavior of the model. Then print the
+    average AUC for the model after all of the trials.
+    For the random forst model, calculate and plot the feature importances
+    extracted from all of the runs (totaled).
+
++ The final part of the code serves two purposes:
+    1. Run K-Means clustering (k = 2 through k = 10). Every model is run 20
+    times (k-fold cross validation). At each run of the model, the adjusted rand
+    index is calculated comparing the different models to one another as well as
+    comparing each model to k-means clustering for that number of clusters. This
+    is intended to use the other models as a way of validating, based on the
+    largest (average) adjusted rand index for each number of clusters.
+    2. Since the number of clusters is the only thing changing at each iteration
+    of the k-fold cross validation, then the RFC, Linear SVM, and LogReg models
+    get additional trials for cross validation.
+    In this phase, PCA is used to reduce the dataset to 5 features ( 5 principle
+    components) to see what kind of effect it would have on the AUC values as
+    well as reducing the noise in the feature-space for clustering. This allows
+    for comparison values of the AUC values in further trials between larger
+    numbers of features and post-PCA features.
 '''
+
 ##########################################################
 ## Print Message Function
 ##########################################################
@@ -365,7 +417,7 @@ for k in auc_validations.keys():
 
 ##########################################################
 
-##Perform the same pipeline with the Logistic Regression
+##Perform the same actions with the Logistic Regression
 
 print('\n')
 
